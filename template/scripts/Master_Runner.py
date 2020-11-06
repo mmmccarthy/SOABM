@@ -1044,9 +1044,9 @@ def loadTripMatrices(Visum, outputsFolder, timeperiod, type, setid=-1):
   if type=="nm":
 
     #create matrices
-    tazIds = VisumPy.helpers.GetMulti(Visum.Net.Zones, "No")
-    walk = numpy.zeros((len(tazIds),len(tazIds)))
-    bike = numpy.zeros((len(tazIds),len(tazIds)))
+    mazs = VisumPy.helpers.GetMulti(Visum.Net.Zones, "SEQMAZ")
+    walk = numpy.zeros((len(mazs),len(mazs)))
+    bike = numpy.zeros((len(mazs),len(mazs)))
 
     #open matrices
     ctrampNmTrips = omx.open_file(outputsFolder + "\\ctrampNmTrips.omx",'r')
@@ -1061,7 +1061,6 @@ def loadTripMatrices(Visum, outputsFolder, timeperiod, type, setid=-1):
     #write matrices to VISUM
     matNums = VisumPy.helpers.GetMulti(Visum.Net.Matrices, "No")
 
-    import pdb; pdb.set_trace()
 
     walkMatNum = 108
     if walkMatNum not in matNums:
@@ -1085,7 +1084,7 @@ def loadTripMatrices(Visum, outputsFolder, timeperiod, type, setid=-1):
 def whichTimePeriod(deptTime, timePeriodStarts):
   return(len(timePeriodStarts[deptTime >= timePeriodStarts])-1)
 
-def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, tapFileName, fileNameTaz, fileNameTap, fileNamePark, fileNameNm):
+def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, tapFileName, fileNameTaz, fileNameTap, fileNamePark):
 
   print("build CT-RAMP trip matrices")
 
@@ -1105,6 +1104,7 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
   uniqTazs = VisumPy.helpers.GetMulti(Visum.Net.Zones, "NO")       #used by CT-RAMP
   tazs   = VisumPy.helpers.GetMulti(Visum.Net.MainZones, "TAZ")    #used by CT-RAMP
   tapIds = VisumPy.helpers.GetMulti(Visum.Net.StopAreas,"NO")      #used by CT-RAMP
+  #mazs   = VisumPy.helpers.GetMulti(Visum.Net.Zones, "SEQMAZ")
 
   #tap ids are same as maz ids under transit everywhere
   if Transit_Everywhere_Switch=='true':
@@ -1132,8 +1132,8 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
   set1 = numpy.zeros((len(timePeriods),len(tapIds),len(tapIds)))
   set2 = numpy.zeros((len(timePeriods),len(tapIds),len(tapIds)))
   set3 = numpy.zeros((len(timePeriods),len(tapIds),len(tapIds)))
-  walk = numpy.zeros((len(timePeriods),len(uniqTazs),len(uniqTazs))) # mode == 9
-  bike = numpy.zeros((len(timePeriods),len(uniqTazs),len(uniqTazs))) # mode == 10
+  walk = numpy.zeros((len(timePeriods),len(tazs),len(tazs))) # mode == 9
+  bike = numpy.zeros((len(timePeriods),len(tazs),len(tazs))) # mode == 10
 
   print("read tap data file for tap to taz mapping for pnr trips")
   taptaz = []
@@ -1166,6 +1166,8 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
   oesctypColNum = trips_col_names.index('orig_escort_stoptype')
   desctypColNum = trips_col_names.index('dest_escort_stoptype')
   #epnumColNum = trips_col_names.index('dest_escortee_pnum')
+
+  import pdb; pdb.set_trace()
 
   for i in range(len(trips)):
     if (i % 10000) == 0:
@@ -1324,8 +1326,8 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
       tod = whichTimePeriod(dept, timePeriodStarts)
       o = int(trips[i][omazColNum])
       d = int(trips[i][dmazColNum])
-      o = tazIds[o] # convert MAZ to TAZ?
-      d = tazIds[d]
+      o = tazs[o]
+      d = tazs[d]
       walk[tod][o,d] = walk[tod][o,d] + expansionFactor
 
     elif mode == 10: #bike
@@ -1333,8 +1335,8 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
       tod = whichTimePeriod(dept, timePeriodStarts)
       o = int(trips[i][omazColNum])
       d = int(trips[i][dmazColNum])
-      o = tazIds[o]
-      d = tazIds[d]
+      o = tazs[o]
+      d = tazs[d]
       bike[tod][o,d] = bike[tod][o,d] + expansionFactor
 
     elif mode == 11: #walk to transit
@@ -1430,13 +1432,13 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
         d = tazIds[d]
         hov2[tod][o,d] = hov2[tod][o,d] + (expansionFactor / hov2occ)
 
-  print("read joint trips")
-  jtrips = []
-  with open(jointTripFileName, 'r') as csvfile:
-    freader = csv.reader(csvfile, skipinitialspace=True)
-    for row in freader:
-      jtrips.append(row)
-  jtrips_col_names = jtrips.pop(0)
+#  print("read joint trips") # TODO joint trips
+#  jtrips = []
+#  with open(jointTripFileName, 'r') as csvfile:
+#    freader = csv.reader(csvfile, skipinitialspace=True)
+#    for row in freader:
+#      jtrips.append(row)
+#  jtrips_col_names = jtrips.pop(0)
 
   #print("process joint trips")
   #omazColNum = jtrips_col_names.index('orig_mgra')
@@ -2965,7 +2967,6 @@ if __name__== "__main__":
         loadTripMatrices(Visum, "outputs/trips", tp, "taz")
         loadTripMatrices(Visum, "outputs/trips", tp, "nm") # load non-motorized
         saveVersion(Visum, "outputs/networks/Highway_Assignment_Results_" + tp + ".ver")
-        # BUG 11-4 license issue
 
         #tap set
         # tap set is not created for transit everywhere scenario
