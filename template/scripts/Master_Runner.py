@@ -1044,9 +1044,9 @@ def loadTripMatrices(Visum, outputsFolder, timeperiod, type, setid=-1):
   if type=="nm":
 
     #create matrices
-    mazs = VisumPy.helpers.GetMulti(Visum.Net.Zones, "SEQMAZ")
-    walk = numpy.zeros((len(mazs),len(mazs)))
-    bike = numpy.zeros((len(mazs),len(mazs)))
+    tazIds = VisumPy.helpers.GetMulti(Visum.Net.Zones, "No") # TODO use MAZ zone system
+    walk = numpy.zeros((len(tazIds),len(tazIds)))
+    bike = numpy.zeros((len(tazIds),len(tazIds)))
 
     #open matrices
     ctrampNmTrips = omx.open_file(outputsFolder + "\\ctrampNmTrips.omx",'r')
@@ -1084,7 +1084,7 @@ def loadTripMatrices(Visum, outputsFolder, timeperiod, type, setid=-1):
 def whichTimePeriod(deptTime, timePeriodStarts):
   return(len(timePeriodStarts[deptTime >= timePeriodStarts])-1)
 
-def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, tapFileName, fileNameTaz, fileNameTap, fileNamePark):
+def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, tapFileName, fileNameTaz, fileNameTap, fileNamePark, fileNameNm):
 
   print("build CT-RAMP trip matrices")
 
@@ -1132,8 +1132,8 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
   set1 = numpy.zeros((len(timePeriods),len(tapIds),len(tapIds)))
   set2 = numpy.zeros((len(timePeriods),len(tapIds),len(tapIds)))
   set3 = numpy.zeros((len(timePeriods),len(tapIds),len(tapIds)))
-  walk = numpy.zeros((len(timePeriods),len(tazs),len(tazs))) # mode == 9
-  bike = numpy.zeros((len(timePeriods),len(tazs),len(tazs))) # mode == 10
+  walk = numpy.zeros((len(timePeriods),len(uniqTazs),len(uniqTazs))) # mode == 9
+  bike = numpy.zeros((len(timePeriods),len(uniqTazs),len(uniqTazs))) # mode == 10
 
   print("read tap data file for tap to taz mapping for pnr trips")
   taptaz = []
@@ -1166,8 +1166,6 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
   oesctypColNum = trips_col_names.index('orig_escort_stoptype')
   desctypColNum = trips_col_names.index('dest_escort_stoptype')
   #epnumColNum = trips_col_names.index('dest_escortee_pnum')
-
-  import pdb; pdb.set_trace()
 
   for i in range(len(trips)):
     if (i % 10000) == 0:
@@ -1326,8 +1324,8 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
       tod = whichTimePeriod(dept, timePeriodStarts)
       o = int(trips[i][omazColNum])
       d = int(trips[i][dmazColNum])
-      o = tazs[o]
-      d = tazs[d]
+      o = tazIds[o]
+      d = tazIds[d]
       walk[tod][o,d] = walk[tod][o,d] + expansionFactor
 
     elif mode == 10: #bike
@@ -1335,8 +1333,8 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
       tod = whichTimePeriod(dept, timePeriodStarts)
       o = int(trips[i][omazColNum])
       d = int(trips[i][dmazColNum])
-      o = tazs[o]
-      d = tazs[d]
+      o = tazIds[o]
+      d = tazIds[d]
       bike[tod][o,d] = bike[tod][o,d] + expansionFactor
 
     elif mode == 11: #walk to transit
@@ -1432,232 +1430,231 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
         d = tazIds[d]
         hov2[tod][o,d] = hov2[tod][o,d] + (expansionFactor / hov2occ)
 
-#  print("read joint trips") # TODO joint trips
-#  jtrips = []
-#  with open(jointTripFileName, 'r') as csvfile:
-#    freader = csv.reader(csvfile, skipinitialspace=True)
-#    for row in freader:
-#      jtrips.append(row)
-#  jtrips_col_names = jtrips.pop(0)
+  print("read joint trips") # TODO joint trips
+  jtrips = []
+  with open(jointTripFileName, 'r') as csvfile:
+    freader = csv.reader(csvfile, skipinitialspace=True)
+    for row in freader:
+      jtrips.append(row)
+  jtrips_col_names = jtrips.pop(0)
 
-  #print("process joint trips")
-  #omazColNum = jtrips_col_names.index('orig_mgra')
-  #dmazColNum = jtrips_col_names.index('dest_mgra')
-  #pmazColNum = jtrips_col_names.index('parking_mgra')
-  #otapColNum = jtrips_col_names.index('trip_board_tap')
-  #dtapColNum = jtrips_col_names.index('trip_alight_tap')
-  #modeColNum = jtrips_col_names.index('trip_mode')
-  #deptColNum = jtrips_col_names.index('stop_period')
-  #inbColNum = jtrips_col_names.index('inbound')
-  #setColNum = jtrips_col_names.index('set')
-  #numPartNum = jtrips_col_names.index('num_participants')
-#
-  #for i in range(len(jtrips)):
-  #  if (i % 10000) == 0:
-  #    print("process joint trip record " + str(i))
-#
-  #  mode = int(jtrips[i][modeColNum])
-#
-#
-  #  if mode == 1: #sov
-  #    dept = int(jtrips[i][deptColNum])
-  #    tod = whichTimePeriod(dept, timePeriodStarts)
-  #    o = int(jtrips[i][omazColNum])
-  #    d = int(jtrips[i][dmazColNum])
-  #    p = int(jtrips[i][pmazColNum])
-  #    if p > 0: #switch destination zone to parking zone
-  #      d = p
-  #    o = tazIds[o]
-  #    d = tazIds[d]
-  #    sov[tod][o,d] = sov[tod][o,d] + expansionFactor
-#
-  #  if mode == 2: #sov toll                     # Should this be elif?
-  #    dept = int(jtrips[i][deptColNum])
-  #    tod = whichTimePeriod(dept, timePeriodStarts)
-  #    o = int(jtrips[i][omazColNum])
-  #    d = int(jtrips[i][dmazColNum])
-  #    p = int(jtrips[i][pmazColNum])
-  #    if p > 0: #switch destination zone to parking zone
-  #      d = p
-  #    o = tazIds[o]
-  #    d = tazIds[d]
-  #    sovtoll[tod][o,d] = sovtoll[tod][o,d] + expansionFactor
-#
-  #  elif mode == 3: #hov2
-  #    dept = int(jtrips[i][deptColNum])
-  #    tod = whichTimePeriod(dept, timePeriodStarts)
-  #    o = int(jtrips[i][omazColNum])
-  #    d = int(jtrips[i][dmazColNum])
-  #    p = int(jtrips[i][pmazColNum])
-  #    if p > 0: #switch destination zone to parking zone
-  #      d = p
-  #    o = tazIds[o]
-  #    d = tazIds[d]
-  #    hov2[tod][o,d] = hov2[tod][o,d] + expansionFactor
-#
-  #  elif mode == 5: #hov2 toll
-  #    dept = int(jtrips[i][deptColNum])
-  #    tod = whichTimePeriod(dept, timePeriodStarts)
-  #    o = int(jtrips[i][omazColNum])
-  #    d = int(jtrips[i][dmazColNum])
-  #    p = int(jtrips[i][pmazColNum])
-  #    if p > 0: #switch destination zone to parking zone
-  #      d = p
-  #    o = tazIds[o]
-  #    d = tazIds[d]
-  #    hov2toll[tod][o,d] = hov2toll[tod][o,d] + expansionFactor
-#
-  #  elif mode == 6: #hov3
-  #    dept = int(jtrips[i][deptColNum])
-  #    tod = whichTimePeriod(dept, timePeriodStarts)
-  #    o = int(jtrips[i][omazColNum])
-  #    d = int(jtrips[i][dmazColNum])
-  #    p = int(jtrips[i][pmazColNum])
-  #    if p > 0: #switch destination zone to parking zone
-  #      d = p
-  #    o = tazIds[o]
-  #    d = tazIds[d]
-  #    hov3[tod][o,d] = hov3[tod][o,d] + expansionFactor
-#
-  #  elif mode == 8: #hov3 toll
-  #    dept = int(jtrips[i][deptColNum])
-  #    tod = whichTimePeriod(dept, timePeriodStarts)
-  #    o = int(jtrips[i][omazColNum])
-  #    d = int(jtrips[i][dmazColNum])
-  #    p = int(jtrips[i][pmazColNum])
-  #    if p > 0: #switch destination zone to parking zone
-  #      d = p
-  #    o = tazIds[o]
-  #    d = tazIds[d]
-  #    hov3toll[tod][o,d] = hov3toll[tod][o,d] + expansionFactor
-#
-  #  elif mode == 9: #walk
-  #    dept = int(jtrips[i][deptColNum])
-  #    tod = whichTimePeriod(dept, timePeriodStarts)
-  #    o = int(jtrips[i][omazColNum])
-  #    d = int(jtrips[i][dmazColNum])
-  #    o = tazIds[o] # convert MAZ to TAZ?
-  #    d = tazIds[d]
-  #    walk[tod][o,d] = walk[tod][o,d] + expansionFactor
-#
-  #  elif mode == 10: #bike
-  #    dept = int(trips[i][deptColNum])
-  #    tod = whichTimePeriod(dept, timePeriodStarts)
-  #    o = int(trips[i][omazColNum])
-  #    d = int(trips[i][dmazColNum])
-  #    o = tazIds[o]
-  #    d = tazIds[d]
-  #    bike[tod][o,d] = bike[tod][o,d] + expansionFactor
-#
-  #  elif mode == 11: #walk to transit
-  #    dept = int(jtrips[i][deptColNum])
-  #    tod = whichTimePeriod(dept, timePeriodStarts)
-  #    omaz = int(jtrips[i][omazColNum])
-  #    dmaz = int(jtrips[i][dmazColNum])
-  #    o = int(jtrips[i][otapColNum])
-  #    d = int(jtrips[i][dtapColNum])
-  #    num_participants = int(jtrips[i][numPartNum])
-  #    o = tapIds.index(o)
-  #    d = tapIds.index(d)
-  #    setid = int(jtrips[i][setColNum])
-  #    if setid==0:
-  #      set1[tod][o,d] = set1[tod][o,d] + expansionFactor * num_participants
-#
-  #      if Transit_Everywhere_Switch=='true': #add transit everywhere demand to auto matrices
-  #        o = tazIds[omaz]
-  #        d = tazIds[dmaz]
-  #        #discounting by occupancy not required for joint trips
-  #        sov[tod][o,d] = sov[tod][o,d] + expansionFactor * Transit_Everywhere_SOV * Transit_Everywhere_AutoFactor
-  #        hov2[tod][o,d] = hov2[tod][o,d] + (expansionFactor * Transit_Everywhere_HOV2 * Transit_Everywhere_AutoFactor)
-  #        hov3[tod][o,d] = hov3[tod][o,d] + (expansionFactor * Transit_Everywhere_HOV3 * Transit_Everywhere_AutoFactor)
-#
-  #    if setid==1:
-  #      set2[tod][o,d] = set2[tod][o,d] + expansionFactor * num_participants
-  #    if setid==2:
-  #      set3[tod][o,d] = set3[tod][o,d] + expansionFactor * num_participants
-#
-  #  elif mode == 12: #pnr
-  #    dept = int(jtrips[i][deptColNum])
-  #    tod = whichTimePeriod(dept, timePeriodStarts)
-  #    o = int(jtrips[i][otapColNum])
-  #    d = int(jtrips[i][dtapColNum])
-  #    num_participants = int(jtrips[i][numPartNum])
-  #    o = tapIds.index(o)
-  #    d = tapIds.index(d)
-  #    setid = int(jtrips[i][setColNum])
-  #    if setid==0:
-  #      set1[tod][o,d] = set1[tod][o,d] + expansionFactor * num_participants
-  #    if setid==1:
-  #      set2[tod][o,d] = set2[tod][o,d] + expansionFactor * num_participants
-  #    if setid==2:
-  #      set3[tod][o,d] = set3[tod][o,d] + expansionFactor * num_participants
-#
-  #    #add drive trip to station
-  #    otap = int(jtrips[i][otapColNum])
-  #    dtap = int(jtrips[i][dtapColNum])
-  #    inbound = int(jtrips[i][inbColNum])
-  #    if inbound:
-  #      o = int(taptaz[tapIds.index(dtap)][1]) #tap,taz columns
-  #      d = int(jtrips[i][dmazColNum])
-  #      o = tazIds[o]
-  #      d = tazIds[d]
-  #      if num_participants == 2:
-  #        hov2[tod][o,d] = hov2[tod][o,d] + expansionFactor
-  #      else:
-  #        hov3[tod][o,d] = hov3[tod][o,d] + expansionFactor
-#
-  #    else:
-  #      d = int(taptaz[tapIds.index(otap)][1]) #tap,taz columns
-  #      o = int(jtrips[i][omazColNum])
-  #      o = tazIds[o]
-  #      d = tazIds[d]
-  #      if num_participants == 2:
-  #        hov2[tod][o,d] = hov2[tod][o,d] + expansionFactor
-  #      else:
-  #        hov3[tod][o,d] = hov3[tod][o,d] + expansionFactor
-#
-  #      #outbound trip parks at lot
-  #      tapParks[tapIds.index(otap)] = tapParks[tapIds.index(otap)] + expansionFactor
-#
-  #  elif mode == 13: #knr
-  #    dept = int(jtrips[i][deptColNum])
-  #    tod = whichTimePeriod(dept, timePeriodStarts)
-  #    o = int(jtrips[i][otapColNum])
-  #    d = int(jtrips[i][dtapColNum])
-  #    num_participants = int(jtrips[i][numPartNum])
-  #    o = tapIds.index(o)
-  #    d = tapIds.index(d)
-  #    setid = int(jtrips[i][setColNum])
-  #    if setid==0:
-  #      set1[tod][o,d] = set1[tod][o,d] + expansionFactor * num_participants
-  #    if setid==1:
-  #      set2[tod][o,d] = set2[tod][o,d] + expansionFactor * num_participants
-  #    if setid==2:
-  #      set3[tod][o,d] = set3[tod][o,d] + expansionFactor * num_participants
-#
-  #    #add drive trip to station
-  #    otap = int(jtrips[i][otapColNum])
-  #    dtap = int(jtrips[i][dtapColNum])
-  #    inbound = int(jtrips[i][inbColNum])
-  #    if inbound:
-  #      o = int(taptaz[tapIds.index(dtap)][1]) #tap,taz columns
-  #      d = int(jtrips[i][dmazColNum])
-  #      o = tazIds[o]
-  #      d = tazIds[d]
-  #      if num_participants == 2:
-  #        hov2[tod][o,d] = hov2[tod][o,d] + expansionFactor
-  #      else:
-  #        hov3[tod][o,d] = hov3[tod][o,d] + expansionFactor
-  #    else:
-  #      d = int(taptaz[tapIds.index(otap)][1]) #tap,taz columns
-  #      o = int(jtrips[i][omazColNum])
-  #      o = tazIds[o]
-  #      d = tazIds[d]
-  #      if num_participants == 2:
-  #        hov2[tod][o,d] = hov2[tod][o,d] + expansionFactor
-  #      else:
-  #        hov3[tod][o,d] = hov3[tod][o,d] + expansionFactor
-#
+  print("process joint trips")
+  omazColNum = jtrips_col_names.index('orig_mgra')
+  dmazColNum = jtrips_col_names.index('dest_mgra')
+  pmazColNum = jtrips_col_names.index('parking_mgra')
+  otapColNum = jtrips_col_names.index('trip_board_tap')
+  dtapColNum = jtrips_col_names.index('trip_alight_tap')
+  modeColNum = jtrips_col_names.index('trip_mode')
+  deptColNum = jtrips_col_names.index('stop_period')
+  inbColNum = jtrips_col_names.index('inbound')
+  setColNum = jtrips_col_names.index('set')
+  numPartNum = jtrips_col_names.index('num_participants')
+
+  for i in range(len(jtrips)):
+    if (i % 10000) == 0:
+      print("process joint trip record " + str(i))
+
+    mode = int(jtrips[i][modeColNum])
+
+    if mode == 1: #sov
+      dept = int(jtrips[i][deptColNum])
+      tod = whichTimePeriod(dept, timePeriodStarts)
+      o = int(jtrips[i][omazColNum])
+      d = int(jtrips[i][dmazColNum])
+      p = int(jtrips[i][pmazColNum])
+      if p > 0: #switch destination zone to parking zone
+        d = p
+      o = tazIds[o]
+      d = tazIds[d]
+      sov[tod][o,d] = sov[tod][o,d] + expansionFactor
+
+    if mode == 2: #sov toll                     # Should this be elif?
+      dept = int(jtrips[i][deptColNum])
+      tod = whichTimePeriod(dept, timePeriodStarts)
+      o = int(jtrips[i][omazColNum])
+      d = int(jtrips[i][dmazColNum])
+      p = int(jtrips[i][pmazColNum])
+      if p > 0: #switch destination zone to parking zone
+        d = p
+      o = tazIds[o]
+      d = tazIds[d]
+      sovtoll[tod][o,d] = sovtoll[tod][o,d] + expansionFactor
+
+    elif mode == 3: #hov2
+      dept = int(jtrips[i][deptColNum])
+      tod = whichTimePeriod(dept, timePeriodStarts)
+      o = int(jtrips[i][omazColNum])
+      d = int(jtrips[i][dmazColNum])
+      p = int(jtrips[i][pmazColNum])
+      if p > 0: #switch destination zone to parking zone
+        d = p
+      o = tazIds[o]
+      d = tazIds[d]
+      hov2[tod][o,d] = hov2[tod][o,d] + expansionFactor
+
+    elif mode == 5: #hov2 toll
+      dept = int(jtrips[i][deptColNum])
+      tod = whichTimePeriod(dept, timePeriodStarts)
+      o = int(jtrips[i][omazColNum])
+      d = int(jtrips[i][dmazColNum])
+      p = int(jtrips[i][pmazColNum])
+      if p > 0: #switch destination zone to parking zone
+        d = p
+      o = tazIds[o]
+      d = tazIds[d]
+      hov2toll[tod][o,d] = hov2toll[tod][o,d] + expansionFactor
+
+    elif mode == 6: #hov3
+      dept = int(jtrips[i][deptColNum])
+      tod = whichTimePeriod(dept, timePeriodStarts)
+      o = int(jtrips[i][omazColNum])
+      d = int(jtrips[i][dmazColNum])
+      p = int(jtrips[i][pmazColNum])
+      if p > 0: #switch destination zone to parking zone
+        d = p
+      o = tazIds[o]
+      d = tazIds[d]
+      hov3[tod][o,d] = hov3[tod][o,d] + expansionFactor
+
+    elif mode == 8: #hov3 toll
+      dept = int(jtrips[i][deptColNum])
+      tod = whichTimePeriod(dept, timePeriodStarts)
+      o = int(jtrips[i][omazColNum])
+      d = int(jtrips[i][dmazColNum])
+      p = int(jtrips[i][pmazColNum])
+      if p > 0: #switch destination zone to parking zone
+        d = p
+      o = tazIds[o]
+      d = tazIds[d]
+      hov3toll[tod][o,d] = hov3toll[tod][o,d] + expansionFactor
+
+    elif mode == 9: #walk
+      dept = int(jtrips[i][deptColNum])
+      tod = whichTimePeriod(dept, timePeriodStarts)
+      o = int(jtrips[i][omazColNum])
+      d = int(jtrips[i][dmazColNum])
+      o = tazIds[o] # convert MAZ to TAZ?
+      d = tazIds[d]
+      walk[tod][o,d] = walk[tod][o,d] + expansionFactor
+
+    elif mode == 10: #bike
+      dept = int(jtrips[i][deptColNum])
+      tod = whichTimePeriod(dept, timePeriodStarts)
+      o = int(jtrips[i][omazColNum])
+      d = int(jtrips[i][dmazColNum])
+      o = tazIds[o]
+      d = tazIds[d]
+      bike[tod][o,d] = bike[tod][o,d] + expansionFactor
+
+    elif mode == 11: #walk to transit
+      dept = int(jtrips[i][deptColNum])
+      tod = whichTimePeriod(dept, timePeriodStarts)
+      omaz = int(jtrips[i][omazColNum])
+      dmaz = int(jtrips[i][dmazColNum])
+      o = int(jtrips[i][otapColNum])
+      d = int(jtrips[i][dtapColNum])
+      num_participants = int(jtrips[i][numPartNum])
+      o = tapIds.index(o)
+      d = tapIds.index(d)
+      setid = int(jtrips[i][setColNum])
+      if setid==0:
+        set1[tod][o,d] = set1[tod][o,d] + expansionFactor * num_participants
+
+        if Transit_Everywhere_Switch=='true': #add transit everywhere demand to auto matrices
+          o = tazIds[omaz]
+          d = tazIds[dmaz]
+          #discounting by occupancy not required for joint trips
+          sov[tod][o,d] = sov[tod][o,d] + expansionFactor * Transit_Everywhere_SOV * Transit_Everywhere_AutoFactor
+          hov2[tod][o,d] = hov2[tod][o,d] + (expansionFactor * Transit_Everywhere_HOV2 * Transit_Everywhere_AutoFactor)
+          hov3[tod][o,d] = hov3[tod][o,d] + (expansionFactor * Transit_Everywhere_HOV3 * Transit_Everywhere_AutoFactor)
+
+      if setid==1:
+        set2[tod][o,d] = set2[tod][o,d] + expansionFactor * num_participants
+      if setid==2:
+        set3[tod][o,d] = set3[tod][o,d] + expansionFactor * num_participants
+
+    elif mode == 12: #pnr
+      dept = int(jtrips[i][deptColNum])
+      tod = whichTimePeriod(dept, timePeriodStarts)
+      o = int(jtrips[i][otapColNum])
+      d = int(jtrips[i][dtapColNum])
+      num_participants = int(jtrips[i][numPartNum])
+      o = tapIds.index(o)
+      d = tapIds.index(d)
+      setid = int(jtrips[i][setColNum])
+      if setid==0:
+        set1[tod][o,d] = set1[tod][o,d] + expansionFactor * num_participants
+      if setid==1:
+        set2[tod][o,d] = set2[tod][o,d] + expansionFactor * num_participants
+      if setid==2:
+        set3[tod][o,d] = set3[tod][o,d] + expansionFactor * num_participants
+
+      #add drive trip to station
+      otap = int(jtrips[i][otapColNum])
+      dtap = int(jtrips[i][dtapColNum])
+      inbound = int(jtrips[i][inbColNum])
+      if inbound:
+        o = int(taptaz[tapIds.index(dtap)][1]) #tap,taz columns
+        d = int(jtrips[i][dmazColNum])
+        o = tazIds[o]
+        d = tazIds[d]
+        if num_participants == 2:
+          hov2[tod][o,d] = hov2[tod][o,d] + expansionFactor
+        else:
+          hov3[tod][o,d] = hov3[tod][o,d] + expansionFactor
+
+      else:
+        d = int(taptaz[tapIds.index(otap)][1]) #tap,taz columns
+        o = int(jtrips[i][omazColNum])
+        o = tazIds[o]
+        d = tazIds[d]
+        if num_participants == 2:
+          hov2[tod][o,d] = hov2[tod][o,d] + expansionFactor
+        else:
+          hov3[tod][o,d] = hov3[tod][o,d] + expansionFactor
+
+        #outbound trip parks at lot
+        tapParks[tapIds.index(otap)] = tapParks[tapIds.index(otap)] + expansionFactor
+
+    elif mode == 13: #knr
+      dept = int(jtrips[i][deptColNum])
+      tod = whichTimePeriod(dept, timePeriodStarts)
+      o = int(jtrips[i][otapColNum])
+      d = int(jtrips[i][dtapColNum])
+      num_participants = int(jtrips[i][numPartNum])
+      o = tapIds.index(o)
+      d = tapIds.index(d)
+      setid = int(jtrips[i][setColNum])
+      if setid==0:
+        set1[tod][o,d] = set1[tod][o,d] + expansionFactor * num_participants
+      if setid==1:
+        set2[tod][o,d] = set2[tod][o,d] + expansionFactor * num_participants
+      if setid==2:
+        set3[tod][o,d] = set3[tod][o,d] + expansionFactor * num_participants
+
+      #add drive trip to station
+      otap = int(jtrips[i][otapColNum])
+      dtap = int(jtrips[i][dtapColNum])
+      inbound = int(jtrips[i][inbColNum])
+      if inbound:
+        o = int(taptaz[tapIds.index(dtap)][1]) #tap,taz columns
+        d = int(jtrips[i][dmazColNum])
+        o = tazIds[o]
+        d = tazIds[d]
+        if num_participants == 2:
+          hov2[tod][o,d] = hov2[tod][o,d] + expansionFactor
+        else:
+          hov3[tod][o,d] = hov3[tod][o,d] + expansionFactor
+      else:
+        d = int(taptaz[tapIds.index(otap)][1]) #tap,taz columns
+        o = int(jtrips[i][omazColNum])
+        o = tazIds[o]
+        d = tazIds[d]
+        if num_participants == 2:
+          hov2[tod][o,d] = hov2[tod][o,d] + expansionFactor
+        else:
+          hov3[tod][o,d] = hov3[tod][o,d] + expansionFactor
+
   #open output files
   omxFileTaz = omx.open_file(fileNameTaz,'w')
   omxFileTap = omx.open_file(fileNameTap,'w')
@@ -1666,7 +1663,7 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
   #write lookups
   omxFileTaz.createMapping("NO",uniqTazs)
   omxFileTap.createMapping("NO",tapIds)
-  omxFileNm.createMapping("NO",tazs)
+  omxFileNm.createMapping("NO",uniqTazs)
 
   #write matrices
   for i in range(len(timePeriods)):
@@ -2301,6 +2298,20 @@ if __name__== "__main__":
         loadProcedure(Visum, "config/visum/maz_skim_" + mode + ".xml")
         createNearbyMazsFile(Visum, mode, "outputs/skims")
         saveVersion(Visum, "outputs/networks/" + mode + "_MAZ_Skim_Setup.ver")
+      closeVisum(Visum)
+    except Exception as e:
+      print(runmode + " Failed")
+      print(e)
+      sys.exit(1)
+
+  if runmode == 'nm_assignment':
+    try:
+      #read properties file
+      Visum = startVisum()
+      loadVersion(Visum, "outputs/networks/Nonmotorized_Assignment_Results.ver") # TODO check
+      loadProcedure(Visum, "config/visum/maz_assign_nonmotorized.xml")
+      #createNearbyMazsFile(Visum, mode, "outputs/skims")
+      saveVersion(Visum, "outputs/networks/Nonmotorized_Assignment_Results.ver")
       closeVisum(Visum)
     except Exception as e:
       print(runmode + " Failed")
@@ -2965,7 +2976,7 @@ if __name__== "__main__":
         #taz
         loadVersion(Visum, "outputs/networks/Highway_Assignment_Results_" + tp + ".ver")
         loadTripMatrices(Visum, "outputs/trips", tp, "taz")
-        loadTripMatrices(Visum, "outputs/trips", tp, "nm") # load non-motorized
+
         saveVersion(Visum, "outputs/networks/Highway_Assignment_Results_" + tp + ".ver")
 
         #tap set
@@ -2975,6 +2986,13 @@ if __name__== "__main__":
               loadVersion(Visum, "outputs/networks/Transit_Assignment_Results_" + tp + "_set" + setid + ".ver")
               loadTripMatrices(Visum, "outputs/trips", tp, "tap", setid)
               saveVersion(Visum, "outputs/networks/Transit_Assignment_Results_" + tp + "_set" + setid + ".ver")
+
+      # non-motorized
+      for mode in ['walk','bike']:
+        loadVersion(Visum, "outputs/networks/" + mode + "_Assignment_Results.ver")
+        loadTripMatrices(Visum, "outputs/trips","all","nm")
+        saveVersion(Visum, "outputs/networks/" + mode + "_Assignment_Results.ver")
+
       closeVisum(Visum)
     except Exception as e:
       print(runmode + " Failed")
