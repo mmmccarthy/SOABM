@@ -1084,7 +1084,7 @@ def loadTripMatrices(Visum, outputsFolder, timeperiod, type, setid=-1):
 def whichTimePeriod(deptTime, timePeriodStarts):
   return(len(timePeriodStarts[deptTime >= timePeriodStarts])-1)
 
-def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, tapFileName, fileNameTaz, fileNameTap, fileNamePark, fileNameNm):
+def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, tapFileName, fileNameTaz, fileNameTap, fileNamePark):
 
   print("build CT-RAMP trip matrices")
 
@@ -1319,24 +1319,6 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
 
       hov3toll[tod][o,d] = hov3toll[tod][o,d] + tripsToAdd
 
-    elif mode == 9: #walk
-      dept = int(trips[i][deptColNum])
-      tod = whichTimePeriod(dept, timePeriodStarts)
-      o = int(trips[i][omazColNum])
-      d = int(trips[i][dmazColNum])
-      o = tazIds[o]
-      d = tazIds[d]
-      walk[tod][o,d] = walk[tod][o,d] + expansionFactor
-
-    elif mode == 10: #bike
-      dept = int(trips[i][deptColNum])
-      tod = whichTimePeriod(dept, timePeriodStarts)
-      o = int(trips[i][omazColNum])
-      d = int(trips[i][dmazColNum])
-      o = tazIds[o]
-      d = tazIds[d]
-      bike[tod][o,d] = bike[tod][o,d] + expansionFactor
-
     elif mode == 11: #walk to transit
       dept = int(trips[i][deptColNum])
       tod = whichTimePeriod(dept, timePeriodStarts)
@@ -1528,24 +1510,6 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
       d = tazIds[d]
       hov3toll[tod][o,d] = hov3toll[tod][o,d] + expansionFactor
 
-    elif mode == 9: #walk
-      dept = int(jtrips[i][deptColNum])
-      tod = whichTimePeriod(dept, timePeriodStarts)
-      o = int(jtrips[i][omazColNum])
-      d = int(jtrips[i][dmazColNum])
-      o = tazIds[o] # convert MAZ to TAZ?
-      d = tazIds[d]
-      walk[tod][o,d] = walk[tod][o,d] + expansionFactor
-
-    elif mode == 10: #bike
-      dept = int(jtrips[i][deptColNum])
-      tod = whichTimePeriod(dept, timePeriodStarts)
-      o = int(jtrips[i][omazColNum])
-      d = int(jtrips[i][dmazColNum])
-      o = tazIds[o]
-      d = tazIds[d]
-      bike[tod][o,d] = bike[tod][o,d] + expansionFactor
-
     elif mode == 11: #walk to transit
       dept = int(jtrips[i][deptColNum])
       tod = whichTimePeriod(dept, timePeriodStarts)
@@ -1658,12 +1622,12 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
   #open output files
   omxFileTaz = omx.open_file(fileNameTaz,'w')
   omxFileTap = omx.open_file(fileNameTap,'w')
-  omxFileNm = omx.open_file(fileNameNm,'w') # non-motorized
+  #omxFileNm = omx.open_file(fileNameNm,'w') # non-motorized
 
   #write lookups
   omxFileTaz.createMapping("NO",uniqTazs)
   omxFileTap.createMapping("NO",tapIds)
-  omxFileNm.createMapping("NO",uniqTazs)
+  #omxFileNm.createMapping("NO",uniqTazs)
 
   #write matrices
   for i in range(len(timePeriods)):
@@ -1679,8 +1643,8 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
     omxFileTap['set_1_' + tpLabel] = set1[i]
     omxFileTap['set_2_' + tpLabel] = set2[i]
     omxFileTap['set_3_' + tpLabel] = set3[i]
-    omxFileNm['walk_' + tpLabel] = walk[i]
-    omxFileNm['bike_' + tpLabel] = bike[i]
+    #omxFileNm['walk_' + tpLabel] = walk[i]
+    #omxFileNm['bike_' + tpLabel] = bike[i]
 
     print('sov_' + tpLabel + ": " + str(round(sov[i].sum(),2)))
     print('hov2_' + tpLabel + ": " + str(round((hov2[i]).sum(),2)))
@@ -1691,12 +1655,12 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
     print('set_1_' + tpLabel + ": " + str(round(set1[i].sum(),2)))
     print('set_2_' + tpLabel + ": " + str(round(set2[i].sum(),2)))
     print('set_3_' + tpLabel + ": " + str(round(set3[i].sum(),2)))
-    print('walk_' + tpLabel + ": " + str(round(walk[i].sum(),2)))
-    print('bike_' + tpLabel + ": " + str(round(bike[i].sum(),2)))
+    #print('walk_' + tpLabel + ": " + str(round(walk[i].sum(),2)))
+    #print('bike_' + tpLabel + ": " + str(round(bike[i].sum(),2)))
 
   omxFileTaz.close()
   omxFileTap.close()
-  omxFileNm.close()
+  #omxFileNm.close()
 
   #write tap parking file
   f = open(fileNamePark, 'w')
@@ -1706,6 +1670,144 @@ def buildTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, t
     parks = tapParks[i]
     f.write("%i,%i\n" % (tap,parks))
   f.close()
+
+def buildNmTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor, fileNameNm):
+  print("build CT-RAMP trip matrices")
+
+  expansionFactor = 1 / expansionFactor
+ #hov2occ = 2.0
+ #hov3occ = 3.33
+
+# switch zone system?
+
+  uniqTazs = VisumPy.helpers.GetMulti(Visum.Net.Zones, "NO")       #used by CT-RAMP
+  tazs   = VisumPy.helpers.GetMulti(Visum.Net.MainZones, "TAZ")    #used by CT-RAMP
+  tapIds = VisumPy.helpers.GetMulti(Visum.Net.StopAreas,"NO")      #used by CT-RAMP
+
+
+  timePeriods =      ["EV1","EA","AM","MD","PM","EV2"]
+  timePeriodStarts = [0    ,1   ,6   ,9  ,25  ,29   ]
+  timePeriodStarts = numpy.array(timePeriodStarts)
+
+  #build taz lookup for quick access later
+  tazIds = [-1]*(len(tazs)+1)
+  for i in range(len(tazs)):
+    tazIds[i+1] = uniqTazs.index(tazs[i]) #assumes seq maz ids
+
+  #create empty matrices
+  walk = numpy.zeros((len(timePeriods),len(uniqTazs),len(uniqTazs))) # mode == 9
+  bike = numpy.zeros((len(timePeriods),len(uniqTazs),len(uniqTazs))) # mode == 10
+
+  print("read individual trips")
+  trips = []
+  with open(tripFileName, 'r') as csvfile:
+    freader = csv.reader(csvfile, skipinitialspace=True)
+    for row in freader:
+      trips.append(row)
+  trips_col_names = trips.pop(0)
+
+  print("process individual trips")
+  omazColNum = trips_col_names.index('orig_maz')
+  dmazColNum = trips_col_names.index('dest_maz')
+  pmazColNum = trips_col_names.index('parking_maz')
+  otapColNum = trips_col_names.index('trip_board_tap')
+  dtapColNum = trips_col_names.index('trip_alight_tap')
+  modeColNum = trips_col_names.index('trip_mode')
+  deptColNum = trips_col_names.index('stop_period')
+  inbColNum = trips_col_names.index('inbound')
+  setColNum = trips_col_names.index('set')
+  dpnumColNum = trips_col_names.index('driver_pnum')
+  pnumColNum = trips_col_names.index('person_num')
+  oesctypColNum = trips_col_names.index('orig_escort_stoptype')
+  desctypColNum = trips_col_names.index('dest_escort_stoptype')
+  #epnumColNum = trips_col_names.index('dest_escortee_pnum')
+
+  for i in range(len(trips)):
+    if (i % 10000) == 0:
+      print("process individual trip record " + str(i))
+
+      mode = int(trips[i][modeColNum])
+
+      if mode == 9: #walk
+        dept = int(trips[i][deptColNum])
+        tod = whichTimePeriod(dept, timePeriodStarts)
+        o = int(trips[i][omazColNum])
+        d = int(trips[i][dmazColNum])
+        o = tazIds[o]
+        d = tazIds[d]
+        walk[tod][o,d] = walk[tod][o,d] + expansionFactor
+
+      if mode == 10: #bike
+        dept = int(trips[i][deptColNum])
+        tod = whichTimePeriod(dept, timePeriodStarts)
+        o = int(trips[i][omazColNum])
+        d = int(trips[i][dmazColNum])
+        o = tazIds[o]
+        d = tazIds[d]
+        bike[tod][o,d] = bike[tod][o,d] + expansionFactor
+
+  print("read joint trips") # TODO joint trips
+  jtrips = []
+  with open(jointTripFileName, 'r') as csvfile:
+    freader = csv.reader(csvfile, skipinitialspace=True)
+    for row in freader:
+      jtrips.append(row)
+  jtrips_col_names = jtrips.pop(0)
+
+  print("process joint trips")
+  omazColNum = jtrips_col_names.index('orig_mgra')
+  dmazColNum = jtrips_col_names.index('dest_mgra')
+  pmazColNum = jtrips_col_names.index('parking_mgra')
+  otapColNum = jtrips_col_names.index('trip_board_tap')
+  dtapColNum = jtrips_col_names.index('trip_alight_tap')
+  modeColNum = jtrips_col_names.index('trip_mode')
+  deptColNum = jtrips_col_names.index('stop_period')
+  inbColNum = jtrips_col_names.index('inbound')
+  setColNum = jtrips_col_names.index('set')
+  numPartNum = jtrips_col_names.index('num_participants')
+
+  for i in range(len(jtrips)):
+    if (i % 10000) == 0:
+      print("process joint trip record " + str(i))
+
+    mode = int(jtrips[i][modeColNum])
+
+    if mode == 9: #walk
+      dept = int(jtrips[i][deptColNum])
+      tod = whichTimePeriod(dept, timePeriodStarts)
+      o = int(jtrips[i][omazColNum])
+      d = int(jtrips[i][dmazColNum])
+      o = tazIds[o] # convert MAZ to TAZ?
+      d = tazIds[d]
+      walk[tod][o,d] = walk[tod][o,d] + expansionFactor
+
+    if mode == 10: #bike
+      dept = int(jtrips[i][deptColNum])
+      tod = whichTimePeriod(dept, timePeriodStarts)
+      o = int(jtrips[i][omazColNum])
+      d = int(jtrips[i][dmazColNum])
+      o = tazIds[o]
+      d = tazIds[d]
+      bike[tod][o,d] = bike[tod][o,d] + expansionFactor
+
+  # open matrices
+  omxFileNm = omx.open_file(fileNameNm,'w') # non-motorized
+  omxFileNm.createMapping("NO",uniqTazs)
+
+  # sum periods
+  bikeTotal = 0
+  walkTotal = 0
+  for i in range(len(timePeriods)):
+    bikeTotal = bikeTotal + bike[i]
+    walkTotal = walkTotal + walk[i]
+
+  # write matrices
+  omxFileNm['walk'] = walkTotal
+  omxFileNm['bike'] = bikeTotal
+  print('walk : ' + str(round(walk[i].sum(),2)))
+  print('bike : ' + str(round(bike[i].sum(),2)))
+
+  omxFileNm.close()
 
 def prepVDFData(Visum, vdfLookupTableFileName):
 
@@ -2968,7 +3070,13 @@ if __name__== "__main__":
       Visum = startVisum()
       loadVersion(Visum, "outputs/networks/Highway_Assignment_Results_am.ver")
       buildTripMatrices(Visum, tripFileName, jtripFileName, hhsamplerate, "outputs/skims/tap_data.csv",
-        "outputs/trips/ctrampTazTrips.omx", "outputs/trips/ctrampTapTrips.omx", "outputs/trips/tapParks.csv", "outputs/trips/ctrampNmTrips.omx")
+        "outputs/trips/ctrampTazTrips.omx", "outputs/trips/ctrampTapTrips.omx", "outputs/trips/tapParks.csv")
+      closeVisum(Visum)
+
+      Visum = startVisum()
+      loadVersion(Visum, "outputs/networks/Walk_MAZ_Skim_Setup.ver")
+      switchZoneSystem(Visum, "maz")
+      buildNmTripMatrices(Visum, tripFileName, jtripFileName, hhsamplerate, "outputs/trips/ctrampNmTrips.omx")
       closeVisum(Visum)
 
       #load trip matrices
@@ -2988,10 +3096,11 @@ if __name__== "__main__":
               saveVersion(Visum, "outputs/networks/Transit_Assignment_Results_" + tp + "_set" + setid + ".ver")
 
       # non-motorized
-      for mode in ['walk','bike']:
-        loadVersion(Visum, "outputs/networks/" + mode + "_Assignment_Results.ver")
-        loadTripMatrices(Visum, "outputs/trips","all","nm")
-        saveVersion(Visum, "outputs/networks/" + mode + "_Assignment_Results.ver")
+        for mode in ['walk','bike']:
+          loadVersion(Visum, "outputs/networks/" + mode + "_MAZ_Skim_Setup.ver")
+          # TODO sum all periods for assignment
+          loadTripMatrices(Visum, "outputs/trips","daily","nm")
+          saveVersion(Visum, "outputs/networks/" + mode + "_Assignment_Results.ver")
 
       closeVisum(Visum)
     except Exception as e:
