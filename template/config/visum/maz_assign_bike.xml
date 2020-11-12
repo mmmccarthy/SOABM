@@ -2750,17 +2750,17 @@
       OPERATIONTYPE = "PrTAssignment"
       ACTIVE = "1"
       COMMENT = ""
-      EXECUTED = "0"
-      STARTTIME = ""
-      ENDTIME = ""
-      DURATION = ""
-      MESSAGES = ""
-      RESULTMESSAGE = ""
-      SUCCESS = "0"
+      EXECUTED = "1"
+      STARTTIME = "2020-11-11 18:27:28"
+      ENDTIME = "2020-11-11 18:27:35"
+      DURATION = "6s"
+      MESSAGES = "Equilibrium assignment: There is no existing start solution or the existing start solution cannot be used. The start solution is recalculated.&#xA;"
+      RESULTMESSAGE = "The assignment reached convergence after 2 of a maximum of 100 iterations with a GAP of 0.00000000e+00."
+      SUCCESS = "1"
       COMPUTENODES = ""
-      WARNINGCOUNT = ""
-      ERRORCOUNT = ""
-      INFORMATIONCOUNT = ""
+      WARNINGCOUNT = "0"
+      ERRORCOUNT = "0"
+      INFORMATIONCOUNT = "1"
       OPERATIONVARIABLECOUNT = "">
       <PRTASSIGNMENTPARA        PRTASSIGNMENTVARIANT = "Equilibrium"        DSEGSET = "Bike">
         <EQUILIBRIUMPARA          WRITEUDAS = "0"          USEEXTENDEDSTABILITYCRITERIA = "0">
@@ -2802,117 +2802,6 @@
           />          
         </EQUILIBRIUMPARA>
       </PRTASSIGNMENTPARA>
-    </OPERATION>
-    <OPERATION
-      NO = "2"
-      CODE = ""
-      OPERATIONTYPE = "EditAttribute"
-      ACTIVE = "1"
-      COMMENT = "Bike Volume"
-      EXECUTED = "0"
-      STARTTIME = ""
-      ENDTIME = ""
-      DURATION = ""
-      MESSAGES = ""
-      RESULTMESSAGE = ""
-      SUCCESS = "0"
-      COMPUTENODES = ""
-      WARNINGCOUNT = ""
-      ERRORCOUNT = ""
-      INFORMATIONCOUNT = ""
-      OPERATIONVARIABLECOUNT = "">
-      <ATTRIBUTEFORMULAPARA
-        NETOBJECTTYPE = "LINK"
-        INCLUDESUBCATEGORIES = "0"
-        RESULTATTRNAME = "ADDVAL1"
-        ONLYACTIVE = "0"
-        FORMULA = "[VOLVEH_TSYS(BIKE,AP)]"
-      />      
-    </OPERATION>
-    <OPERATION
-      NO = "3"
-      CODE = ""
-      OPERATIONTYPE = "PrTAssignment"
-      ACTIVE = "1"
-      COMMENT = ""
-      EXECUTED = "0"
-      STARTTIME = ""
-      ENDTIME = ""
-      DURATION = ""
-      MESSAGES = ""
-      RESULTMESSAGE = ""
-      SUCCESS = "0"
-      COMPUTENODES = ""
-      WARNINGCOUNT = ""
-      ERRORCOUNT = ""
-      INFORMATIONCOUNT = ""
-      OPERATIONVARIABLECOUNT = "">
-      <PRTASSIGNMENTPARA        PRTASSIGNMENTVARIANT = "Equilibrium"        DSEGSET = "Walk">
-        <EQUILIBRIUMPARA          WRITEUDAS = "0"          USEEXTENDEDSTABILITYCRITERIA = "0">
-          <DEMANDSHAREPARA>
-            <ATTRIBUTE              NAME = "DEMANDSHARE">
-              <ATTRITEM                SUBATTR1 = "1"                VALUE = "100"              />              
-              <ATTRITEM                SUBATTR1 = "2"                VALUE = "0"              />              
-              <ATTRITEM                SUBATTR1 = "3"                VALUE = "0"              />              
-              <ATTRITEM                SUBATTR1 = "4"                VALUE = "0"              />              
-              <ATTRITEM                SUBATTR1 = "5"                VALUE = "0"              />              
-              <ATTRITEM                SUBATTR1 = "6"                VALUE = "0"              />              
-              <ATTRITEM                SUBATTR1 = "7"                VALUE = "0"              />              
-              <ATTRITEM                SUBATTR1 = "8"                VALUE = "0"              />              
-              <ATTRITEM                SUBATTR1 = "9"                VALUE = "0"              />              
-              <ATTRITEM                SUBATTR1 = "10"                VALUE = "0"              />              
-              <ATTRITEM                SUBATTR1 = "11"                VALUE = "0"              />              
-              <ATTRITEM                SUBATTR1 = "12"                VALUE = "0"              />              
-            </ATTRIBUTE>
-          </DEMANDSHAREPARA>
-          <EQUIINITIALSOLUTIONPARA            USECURRENTSOLUTION = "1"          />          
-          <EQUISTOPCRITERIAPARA
-            MAXNUMOUTERIT = "100"
-            MAXABSIMPDEV = "0"
-            MAXRELIMPDEV = "0"
-          />          
-          <NETBALANCING            GENERALVALUE = "5"          />          
-          <EXTENDEDSTABILITYCRITERIAPARA
-            MAXGAP = "0.0001"
-            NUMCHECKEDSUBSEQUENTITERATIONS = "4"
-            IGNOREVOLUMESMALLERTHAN = "1"
-            MAXRELDIFFLINKVOL = "0.01"
-            FRACTIONMAXRELDIFFLINKVOL = "0.98"
-            MAXRELDIFFTURNVOL = "0.01"
-            FRACTIONMAXRELDIFFTURNVOL = "0.98"
-            MAXRELDIFFLINKIMP = "0.01"
-            FRACTIONMAXRELDIFFLINKIMP = "0.98"
-            MAXRELDIFFTURNIMP = "0.01"
-            FRACTIONMAXRELDIFFTURNIMP = "0.98"
-          />          
-        </EQUILIBRIUMPARA>
-      </PRTASSIGNMENTPARA>
-    </OPERATION>
-    <OPERATION
-      NO = "4"
-      CODE = ""
-      OPERATIONTYPE = "EditAttribute"
-      ACTIVE = "1"
-      COMMENT = "Walk Volume"
-      EXECUTED = "0"
-      STARTTIME = ""
-      ENDTIME = ""
-      DURATION = ""
-      MESSAGES = ""
-      RESULTMESSAGE = ""
-      SUCCESS = "0"
-      COMPUTENODES = ""
-      WARNINGCOUNT = ""
-      ERRORCOUNT = ""
-      INFORMATIONCOUNT = ""
-      OPERATIONVARIABLECOUNT = "">
-      <ATTRIBUTEFORMULAPARA
-        NETOBJECTTYPE = "LINK"
-        INCLUDESUBCATEGORIES = "0"
-        RESULTATTRNAME = "ADDVAL2"
-        ONLYACTIVE = "0"
-        FORMULA = "[VOLVEH_TSYS(WALK,AP)]"
-      />      
     </OPERATION>
   </OPERATIONS>
   <OPERATIONVARIABLES>

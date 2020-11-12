@@ -1075,7 +1075,7 @@ def loadTripMatrices(Visum, outputsFolder, timeperiod, type, setid=-1):
     walkHandle = Visum.Net.Matrices.ItemByKey(walkMatNum)
     walkHandle.SetAttValue("DSEGCODE","Walk")
     walkHandle.SetAttValue("NAME","Walk Demand")
-    VisumPy.helpers.SetMatrix(Visum, walkMatNum, walk) # DEBUG test set one period - worked for 1 period
+    VisumPy.helpers.SetMatrix(Visum, walkMatNum, walk)
 
     bikeMatNum = 151
     if bikeMatNum not in matNums:
@@ -1083,7 +1083,7 @@ def loadTripMatrices(Visum, outputsFolder, timeperiod, type, setid=-1):
     bikeHandle = Visum.Net.Matrices.ItemByKey(bikeMatNum)
     bikeHandle.SetAttValue("DSEGCODE","Bike")
     bikeHandle.SetAttValue("NAME","Bike Demand")
-    VisumPy.helpers.SetMatrix(Visum, bikeMatNum, bike) # DEBUG
+    VisumPy.helpers.SetMatrix(Visum, bikeMatNum, bike)
 
     #close files
     ctrampNmTrips.close()
@@ -2426,14 +2426,19 @@ if __name__== "__main__":
 
   if runmode == 'nm_assignment':
     try:
+      Visum = startVisum()
+      matNum = {'Walk': 150, 'Bike': 151}
       for mode in ["Walk","Bike"]:
         #read properties file
-        Visum = startVisum()
-        loadVersion(Visum, "outputs/networks/Highway_Skimming_Assignment_Setup.ver") # TODO switch to MAZ system
-        loadProcedure(Visum, "config/visum/maz_assign_" + mode.lower() + ".xml")
-        #createNearbyMazsFile(Visum, mode, "outputs/skims")
-        saveVersion(Visum, "outputs/networks/" + mode + "_Assignment_Results.ver")
-        closeVisum(Visum)
+        for tp in ['ea','am','md','pm','ev']:
+            loadVersion(Visum, "outputs/networks/" + mode + "_Assignment_Results_" + tp + ".ver") # TODO switch to MAZ system
+            # Only run assignment if there are trips to assign
+            demand = VisumPy.helpers.GetMatrix(Visum, matNum[mode])
+            if demand.sum() > 0:
+                loadProcedure(Visum, "config/visum/maz_assign_" + mode.lower() + ".xml")
+            #createNearbyMazsFile(Visum, mode, "outputs/skims")
+            saveVersion(Visum, "outputs/networks/" + mode + "_Assignment_Results_" + tp + ".ver")
+      closeVisum(Visum)
     except Exception as e:
       print(runmode + " Failed")
       print(e)
@@ -2501,7 +2506,7 @@ if __name__== "__main__":
         msaPrep(Visum, iteration)
         loadProcedure(Visum, "config/visum/taz_skim_" + tp + ".xml")
         saveVersion(Visum, "outputs/networks/Highway_Assignment_Results_" + tp + ".ver")
-      loadVersion(Visum, "outputs/networks/Highway_Assignment_Results_" + tp + ".ver") # DEBUG this is outside of the tp loop
+      loadVersion(Visum, "outputs/networks/Highway_Assignment_Results_" + tp + ".ver")
       if Transit_Everywhere_Switch=='false':
           tazsToTapsForDriveAccess(Visum, "outputs/skims/drive_taz_tap.csv", "outputs/skims/tap_data.csv")
       closeVisum(Visum)
