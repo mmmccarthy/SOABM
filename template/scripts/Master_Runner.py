@@ -1044,7 +1044,7 @@ def loadTripMatrices(Visum, outputsFolder, timeperiod, type, setid=-1):
   if type=="nm":
 
     #create matrices
-    mazIds = VisumPy.helpers.GetMulti(Visum.Net.Zones, "No") # TODO use MAZ zone system
+    mazIds = VisumPy.helpers.GetMulti(Visum.Net.Zones, "No")
     walk = numpy.zeros((len(mazIds),len(mazIds)))
     bike = numpy.zeros((len(mazIds),len(mazIds)))
 
@@ -1057,14 +1057,14 @@ def loadTripMatrices(Visum, outputsFolder, timeperiod, type, setid=-1):
     for aMatTP in matTP:
       ct_walk = numpy.array(ctrampNmTrips["walk_" + aMatTP]) # len = 6 / len of [1] = 1357 --
       walk = walk + ct_walk
-      
+
       #add 0.001 to ensure assignment runs
       walk[0][1] = walk[0][1] + 0.001
 
     for aMatTP in matTP:
       ct_bike = numpy.array(ctrampNmTrips["bike_" + aMatTP])
       bike = bike + ct_bike
-      
+
       #add 0.001 to ensure assignment runs
       bike[0][1] = bike[0][1] + 0.001
 
@@ -1724,8 +1724,8 @@ def buildNmTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor,
   modeColNum = trips_col_names.index('trip_mode')
   deptColNum = trips_col_names.index('stop_period')
   inbColNum = trips_col_names.index('inbound')
-  
-  
+
+
   #num_walk=0
 
 
@@ -1745,7 +1745,7 @@ def buildNmTripMatrices(Visum, tripFileName, jointTripFileName, expansionFactor,
         o = mazIds[o]
         d = mazIds[d]
         walk[tod][o,d] = walk[tod][o,d] + expansionFactor
-    
+
       if mode == 10: #bike
         dept = int(trips[i][deptColNum])
         tod = whichTimePeriod(dept, timePeriodStarts)
@@ -2410,7 +2410,7 @@ if __name__== "__main__":
       for mode in ["Walk","Bike"]:
         #read properties file
         for tp in ['ea','am','md','pm','ev']:
-            loadVersion(Visum, "outputs/networks/" + mode + "_MAZ_Skim_Setup.ver") # TODO switch to MAZ system
+            loadVersion(Visum, "outputs/networks/" + mode + "_Assignment_Results_" + tp + ".ver")
             # Only run assignment if there are trips to assign
             demand = VisumPy.helpers.GetMatrix(Visum, matNum[mode])
             if demand.sum() > 0:
